@@ -14,6 +14,9 @@ font-weight: 500;
         padding: 20px;
         text-align: center;
       }
+      h2 {
+        color: #1c5964;
+      }
       #content {
         font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
 font-weight: 500;
@@ -49,6 +52,8 @@ font-weight: 500;
       color: #eee;
       cursor: pointer;
       padding: 10px 40px;
+      border: none;
+      border-radius: 2px;
     }
     button:focus-visible, select:focus-visible {
       outline: 1px solid #071a22;
@@ -58,6 +63,35 @@ font-weight: 500;
       color: #7a0000;
       margin-top: 20px;
     }
+    #result-wrap {
+      position: relative;
+      display: inline-block;
+    }
+    #overlay {
+      position: absolute;
+      top: -80px;
+      left: -60px;
+      width: calc(100% + 120px);
+      height: calc(100% + 120px);
+      object-fit: contain;
+      pointer-events:none;
+    }
+    fieldset {
+      border: none;
+      padding: 0;
+    }
+    legend {
+      padding: 0;
+      margin-bottom: 6px;
+    }
+    .btn {
+      cursor: pointer;
+      transition: color 0.3s ease; /* Smooth fade */
+    }
+    .btn:hover {
+    color: #2e9cdb; /* Darker blue on hover */
+  }
+
   </style>
 </head>
 <body>
@@ -67,31 +101,42 @@ font-weight: 500;
   </div>
  
   <div id="content">
-    <div id="result" aria-live="polite">sillybuddy445</div>
+    <div id="result-wrap">
+      <div id="result" aria-live="polite">sillybuddy445</div>
+      <img id="overlay" src="explosion.gif" alt="" hidden>
+    </div>
+    
  
     <div id="pickers">
       <fieldset>
         <legend>First word</legend>
-        <label><input type="radio" name="first-word" value="static:silly" checked> silly</label>
-        <label><input type="radio" name="first-word" value="silly-adjectives.txt"> silly synonym</label>
-        <label><input type="radio" name="first-word" value="rand-adjectives.txt"> random adjective</label>
+        <select id="first-word">
+          <option value="static:silly" selected>silly</option>
+          <option value="silly-adjectives.txt">silly synonym</option>
+          <option value="rand-adjectives.txt">random adjective</option>
+        </select>
       </fieldset>
  
       <fieldset>
         <legend>Second word</legend>
-        <label><input type="radio" name="second-word" value="static:buddy" checked> buddy</label>
-        <label><input type="radio" name="second-word" value="buddy-syns.txt"> buddy synonym</label>
-        <label><input type="radio" name="second-word" value="nouns.txt"> random noun</label>
+        <select id="second-word">
+          <option value="static:buddy" selected>buddy</option>
+          <option value="buddy-syns.txt">buddy synonym</option>
+          <option value="nouns.txt">random noun</option>
+        </select>
       </fieldset>
  
       <fieldset>
         <legend>Number</legend>
-        <label><input type="radio" name="number" value="static:445"> 445</label>
-        <label><input type="radio" name="number" value="random" checked> random </label>
+        <select id="number">
+          <option value="static:445" selected>445</option>
+          <option value="random">random</option>
+        </select>
       </fieldset>
     </div>
- 
-    <button id="generate" type="button">Generate</button>
+    
+    <button class="btn" id="generate" type="button">Generate</button>
+
     <p id="error"></p>
   </div>
  
@@ -117,8 +162,8 @@ font-weight: 500;
     }
  
     // Returns the word for one radio group: either a fixed word or a random one from a file
-    async function getWord(groupName) {
-      const choice = document.querySelector('input[name="' + groupName + '"]:checked').value;
+    async function getWord(selectId) {
+      const choice = document.getElementById(selectId).value;
       if (choice.startsWith("static:")) {
         return choice.slice("static:".length);
       }
@@ -133,19 +178,36 @@ font-weight: 500;
         const first = await getWord("first-word");
         const second = await getWord("second-word");
  
-        const numberChoice = document.querySelector('input[name="number"]:checked').value;
+        const numberChoice = document.getElementById("number").value;
         const number = numberChoice.startsWith("static:")
           ? numberChoice.slice("static:".length)
           : String(Math.floor(Math.random() * 999) + 1).padStart(3, "0");
  
         document.getElementById("result").textContent =
           first + "" + second + "" + number;
+        playOverlay();
       } catch (e) {
         error.textContent =
           "Couldn't load the word lists. If you opened this file directly, " +
           "run a local server in this folder instead (see instructions).";
       }
     });
+
+    function playOverlay() {
+      const gif = document.getElementById("overlay");
+
+      clearTimeout(playOverlay.timer);
+      gif.hidden = false;
+
+      gif.onload = () => {
+        gif.hidden = false;
+        playOverlay.timer = setTimeout(() => {
+        gif.hidden = true;
+      }, 700);
+      };
+
+      gif.src = "explosion.gif?" + Date.now();
+    }
   </script>
 </body>
 </html>

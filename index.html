@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+  <html lang="en">
+    <head>
+      
+      <style type="text/css">
+        body {
+          background-color: #0ce9cc;
+        }
+      #header {
+        font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+font-weight: 500;
+        color: #071a22;
+        padding: 20px;
+        text-align: center;
+      }
+      #content {
+        font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+font-weight: 500;
+        padding: 20px;
+        text-align: center;
+      }
+          #result {
+            font-family: Charter, 'Bitstream Charter', 'Sitka Text', Cambria, serif;
+font-weight: 500;
+      font-size: 48px;
+      font-weight: bold;
+      margin: 10px 0 30px;
+      min-height: 1.2em;
+    }
+    #pickers {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-bottom: 30px;
+    }
+    select, button {
+      font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+font-weight: 500;
+      font-size: 18px;
+      padding: 8px 12px;
+      border: 1px solid #000;
+      background: #9cffef;
+      color: #221919;
+    }
+    button {
+      background: #000;
+      color: #eee;
+      cursor: pointer;
+      padding: 10px 40px;
+    }
+    button:focus-visible, select:focus-visible {
+      outline: 1px solid #071a22;
+      outline-offset: 3px;
+    }
+    #error {
+      color: #7a0000;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <h1>Silly Name Generator</h1>
+    <h2>Start your silly future today!</h2>
+  </div>
+ 
+  <div id="content">
+    <div id="result" aria-live="polite">sillybuddy445</div>
+ 
+    <div id="pickers">
+      <fieldset>
+        <legend>First word</legend>
+        <label><input type="radio" name="first-word" value="static:silly" checked> silly</label>
+        <label><input type="radio" name="first-word" value="silly-adjectives.txt"> silly synonym</label>
+        <label><input type="radio" name="first-word" value="rand-adjectives.txt"> random adjective</label>
+      </fieldset>
+ 
+      <fieldset>
+        <legend>Second word</legend>
+        <label><input type="radio" name="second-word" value="static:buddy" checked> buddy</label>
+        <label><input type="radio" name="second-word" value="buddy-syns.txt"> buddy synonym</label>
+        <label><input type="radio" name="second-word" value="nouns.txt"> random noun</label>
+      </fieldset>
+ 
+      <fieldset>
+        <legend>Number</legend>
+        <label><input type="radio" name="number" value="random" checked> random </label>
+        <label><input type="radio" name="number" value="static:445"> 445</label>
+      </fieldset>
+    </div>
+ 
+    <button id="generate" type="button">Generate</button>
+    <p id="error"></p>
+  </div>
+ 
+  <script>
+    const cache = {};
+ 
+    // Loads a .txt file (one word per line) and remembers it
+    async function loadList(file) {
+      if (!cache[file]) {
+        const response = await fetch(file);
+        if (!response.ok) throw new Error("Could not load " + file);
+        const text = await response.text();
+        cache[file] = text
+          .split(/\r?\n/)
+          .map(line => line.trim())
+          .filter(line => line.length > 0);
+      }
+      return cache[file];
+    }
+ 
+    function pickRandom(list) {
+      return list[Math.floor(Math.random() * list.length)];
+    }
+ 
+    // Returns the word for one radio group: either a fixed word or a random one from a file
+    async function getWord(groupName) {
+      const choice = document.querySelector('input[name="' + groupName + '"]:checked').value;
+      if (choice.startsWith("static:")) {
+        return choice.slice("static:".length);
+      }
+      return pickRandom(await loadList(choice));
+    }
+ 
+    document.getElementById("generate").addEventListener("click", async () => {
+      const error = document.getElementById("error");
+      error.textContent = "";
+ 
+      try {
+        const first = await getWord("first-word");
+        const second = await getWord("second-word");
+ 
+        const numberChoice = document.querySelector('input[name="number"]:checked').value;
+        const number = numberChoice.startsWith("static:")
+          ? numberChoice.slice("static:".length)
+          : String(Math.floor(Math.random() * 999) + 1).padStart(3, "0");
+ 
+        document.getElementById("result").textContent =
+          first + "" + second + "" + number;
+      } catch (e) {
+        error.textContent =
+          "Couldn't load the word lists. If you opened this file directly, " +
+          "run a local server in this folder instead (see instructions).";
+      }
+    });
+  </script>
+</body>
+</html>
+
